@@ -26,17 +26,25 @@ class PretrainedDecoderModel(nn.Module):
         
         if self.frozen:
             logger.info(' Freezing attention layers')
-            for param in self.pretrained_gpt.transformer.parameters():
+            # The lm head weights are tied to the embedding layer,
+            # so we need to enable grad again manually
+            # TODO: research if doing this is appropriate, i.e. the 
+            # weight tieing is significant
+            for param in self.pretrained_gpt.base_model.parameters():
                 param.requires_grad = False
+            for param in self.pretrained_gpt.lm_head.parameters():
+                param.requires_grad = True
         
     def forward(self, batch):
         outputs = self.pretrained_gpt(
             input_ids = batch.input_ids,
             attention_mask = batch.attention_mask,
-            labels = batch.input_ids
+            labels = batch.input_ids,
+            return_dict=True
         )
         
-        return ModelOutput(outputs.loss, outputs.logits)
+        # return ModelOutput(outputs['loss'], outputs['logits'])
+        return outputs
 
 def model_test(config):
     print('starts model output test')
@@ -49,13 +57,15 @@ def model_test(config):
     # tokenizer.add_special_tokens([CONSTANT.sep_token], special_tokens=True)
     dataset = MovieDataset(config, tokenizer, 'train_subset')
     dataloader = DataLoader(dataset, 
-                            batch_size=4, 
+                            batch_size=2, 
                             shuffle=False,
                             collate_fn=dataset.collate_fn)
     model = PretrainedDecoderModel(config)
     model.to(dataset.device)
+    # print(model)
     
     for i, sample in enumerate(dataloader):
+        sample.to_device(dataset.device)
         output = model(sample)
         print(output.loss)
         print(output.logits.size())

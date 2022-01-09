@@ -134,7 +134,7 @@ class Trainer:
                 epoch_loss += batch_loss
                 batch_loss = 0
             
-            # val_loss = self.run_validation()
+            val_loss = self.run_validation()
     
     def run_validation(self):
         pbar = tqdm(enumerate(self.dev_loader), total=len(self.dev_loader))
@@ -180,9 +180,9 @@ class Trainer:
         output = self.model(batch)
         loss = output.loss
         
-        wandb.log({
-            'val_loss': loss.detach()
-            })  
+        # wandb.log({
+        #     'val_loss': loss.detach()
+        #     })  
         
         return self.StepOutput(loss.detach(), output.logits.detach())
 
