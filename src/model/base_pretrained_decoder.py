@@ -25,7 +25,7 @@ class PretrainedDecoderModel(nn.Module):
         self.frozen = self.config.getboolean('freeze')
         
         if self.frozen:
-            logger.info('Freezing attention layers')
+            logger.info(' Freezing attention layers')
             for param in self.pretrained_gpt.transformer.parameters():
                 param.requires_grad = False
         

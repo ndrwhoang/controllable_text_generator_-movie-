@@ -38,7 +38,7 @@ class MovieDataset(Dataset):
         self.input_ids = self.convert_to_input(samples)
         
         self.n_samples = len(self.input_ids)
-        logger.info(f'Finish processing data, n_samples : {self.n_samples}')
+        logger.info(f' Finish processing data, n_samples : {self.n_samples}')
         
     def get_data_path(self, dataset):
         dataset_dict = {
@@ -51,17 +51,17 @@ class MovieDataset(Dataset):
         return dataset_dict[dataset]
     
     def make_samples(self, data_path):
-        logger.info(f'Reading data rom {data_path}')
+        logger.info(f' Reading data rom {data_path}')
         data_path = os.path.join(*data_path.split('\\'))
         with open(data_path, 'r') as f:
             samples = json.load(f)
         f.close()
-        logger.info(f'{len(samples)} samples contained in file')
+        logger.info(f' {len(samples)} samples contained in file')
         
         return samples
     
     def convert_to_input(self, samples):
-        logger.info('Start processing samples to input ids')
+        logger.info(' Start processing samples to input ids')
         input_ids = []
         
         for i_sample, sample in tqdm(enumerate(samples), total=len(samples)):

@@ -16,9 +16,7 @@ from torch.cuda.amp import GradScaler
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-
+logger.setLevel(logging.INFO)
 
 class Trainer:
     def __init__(self, config, model, train_dataset, dev_dataset=None, checkpoint=None):
@@ -59,7 +57,7 @@ class Trainer:
         # TODO: find graceful way to handle this
         self.StepOutput = namedtuple('StepOutput', ['loss', 'logits'])        
         
-        logger.info(f'Training with Mixed Precision: {self.use_amp} and Gradient Accumulation: {self.grad_accumulation_steps}')
+        logger.info(f' Training with Mixed Precision: {self.use_amp} and Gradient Accumulation: {self.grad_accumulation_steps}')
     
     def set_seed(self):
         self.seed = int(self.config['general']['seed'])
@@ -68,25 +66,27 @@ class Trainer:
         np.random.seed(self.seed)
         
     def _get_dataloader(self, config):
-        train_dataloader = DataLoader(self.train_dataset,
+        train_loader = DataLoader(self.train_dataset,
                                       batch_size=int(config['training']['train_bsz']),
                                       collate_fn=self.train_dataset.collate_fn,
                                       shuffle=True,
                                       drop_last=True,
-                                      num_workers=int(config['general']['num_worker']),
-                                      pin_memory=True)
-        dev_dataloader = DataLoader(self.val_dataset,
+                                    #   num_workers=int(config['general']['num_worker']),
+                                    #   pin_memory=True
+                                      )
+        dev_loader = DataLoader(self.dev_dataset,
                                     batch_size=int(config['training']['val_bsz']),
-                                    collate_fn=self.val_dataset.collate_fn,
+                                    collate_fn=self.dev_dataset.collate_fn,
                                     shuffle=False,
                                     drop_last=False,
-                                    num_workers=int(config['general']['num_worker']),
-                                    pin_memory=True)
+                                    # num_workers=int(config['general']['num_worker']),
+                                    # pin_memory=True
+                                    )
         
-        return train_dataloader, dev_dataloader
+        return train_loader, dev_loader
     
     def _get_optimizer(self, config):
-        total_steps = len(self.train_dataloader) * int(self.config['training']['n_epochs'])
+        total_steps = len(self.train_loader) * int(self.config['training']['n_epochs'])
         model_params = list(self.model.named_parameters())
         no_decay = ['bias']
         optimized_params = [
@@ -146,7 +146,7 @@ class Trainer:
             pbar.set_description(f'(Validating) Steps: {i}/{len(self.dev_loader)} - Loss: {step_output.loss}', refresh=True)
             epoch_loss += step_output.loss
         
-        logger.info(f'Validation loss: {epoch_loss}')
+        logger.info(f' Validation loss: {epoch_loss}')
         # wandb.log({'epoch_val_loss: epoch_loss'})
         
         return epoch_loss
@@ -194,6 +194,10 @@ def trainer_test(config):
     
     tokenizer = GPT2TokenizerFast.from_pretrained('gpt2')
     dataset = MovieDataset(config, tokenizer, 'train_subset')
+    model = PretrainedDecoderModel(config)
+    
+    trainer = Trainer(config, model , dataset)
+    trainer.run_train('test_run')
     
     
 if __name__ == '__main__':
@@ -202,4 +206,5 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(os.path.join('configs', 'config.cfg'))
     
+    trainer_test(config)
     
