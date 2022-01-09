@@ -1,29 +1,19 @@
 import os
 import json
 import logging
-from dataclasses import dataclass
 from tqdm import tqdm
 
 import torch
+import torch.nn as nn
 from torch.utils.data import Dataset
 from torch.nn.utils.rnn import pad_sequence
 
+from src.output_util import Batch
 from data.auxiliary import CONSTANT
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-@dataclass
-class Batch:
-    input_ids: torch.Tensor
-    attention_mask: torch.Tensor
-    # target_ids: torch.Tensor
-    
-    def to_device(self, device):
-        self.input_ids = self.input_ids.to(device)
-        self.attention_mask = self.attention_mask.to(device)
-        # self.target_ids = self.target_ids.to(device)
         
 class MovieDataset(Dataset):
     def __init__(self, config, tokenizer, dataset):
@@ -85,10 +75,12 @@ class MovieDataset(Dataset):
         input_ids = batch
         input_ids = pad_sequence(input_ids, batch_first=True)
         attention_mask = (input_ids != 0).long()
+        tgt_mask = nn.Transformer.generate_square_subsequent_mask(input_ids.size(-1))
+        position_ids = torch.arange(0, input_ids.size(-1), dtype=torch.long)
         
         assert input_ids.size() == attention_mask.size()
         
-        return Batch(input_ids, attention_mask)
+        return Batch(input_ids, attention_mask, position_ids, tgt_mask)
 
 def dataloader_test():
     print('make_samples test')
@@ -121,7 +113,7 @@ if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(config_path)
     
-    dataloader_test()
+    # dataloader_test()
     
     
     

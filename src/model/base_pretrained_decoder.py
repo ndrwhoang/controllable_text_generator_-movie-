@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from src.output_util import ModelOutput
 
 import torch
 import torch.nn as nn
@@ -11,11 +11,6 @@ t_logging.set_verbosity_error()
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-
-@dataclass
-class ModelOutput:
-    loss: torch.Tensor
-    logits: torch.Tensor
 
 class PretrainedDecoderModel(nn.Module):
     def __init__(self, config):
@@ -43,8 +38,8 @@ class PretrainedDecoderModel(nn.Module):
             return_dict=True
         )
         
-        # return ModelOutput(outputs['loss'], outputs['logits'])
-        return outputs
+        return ModelOutput(outputs['loss'], outputs['logits'])
+        # return outputs
 
 def model_test(config):
     print('starts model output test')
@@ -62,13 +57,13 @@ def model_test(config):
                             collate_fn=dataset.collate_fn)
     model = PretrainedDecoderModel(config)
     model.to(dataset.device)
-    # print(model)
+    print(model)
     
-    for i, sample in enumerate(dataloader):
-        sample.to_device(dataset.device)
-        output = model(sample)
-        print(output.loss)
-        print(output.logits.size())
+    # for i, sample in enumerate(dataloader):
+    #     sample.to_device(dataset.device)
+    #     output = model(sample)
+    #     print(output.loss)
+    #     print(output.logits.size())
 
 
 if __name__ == '__main__':
